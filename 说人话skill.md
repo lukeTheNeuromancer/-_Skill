@@ -391,20 +391,4 @@ Tier 表示问题命中强度，与 [严重度分级](./references/severity.md) 
 - `public-writing` 和 AI 味偏重的 `chat`，第二遍更常需要
 - `docs / status / code-context` 默认更保守；如果第二遍会让语气变口语、变广告、或影响保真，就停在第一遍
 
-## Reference navigation
 
-- 本文件可以单独兜底；完整模式默认是 `SKILL.md` + `references/` 一起工作
-- 想先看“改成什么样才算更像人”：看 [Positive Style Contract](./references/positive-style.md)
-- 想先看哪些数字、引用、命令、参数不能漂：看 [Protected Spans](./references/protected-spans.md)
-- 想看中文高频短语：看 [中文禁用短语表](./references/phrases-zh.md)
-- 想看英文高频短语：看 [English Banned Phrases](./references/phrases-en.md)
-- 想看句子和段落层面的结构问题：看 [结构反模式](./references/structures.md)
-- 想按 `Tier 1 / 2 / 3` 校准命中规则：看 [严重度分级](./references/severity.md)
-- 遇到具体病灶怎么动手：看 [微操作手册](./references/operation-manual.md)
-- 想确认某个场景什么不能乱动：看 [场景禁改表](./references/scene-guardrails.md)
-- 想校准误杀边界或做静态回归：看 [边界案例集](./references/boundary-cases.md)
-- 想看场景样本评测（高拟真合成，验收线是改完能不能直接发）：看 [场景样本评测](./evals/real-samples.md)
-- 想看默认改写和 `annotation mode` 的对照：看 [改写示例](./references/examples.md)
-- 想处理没收录进词表的同类变体：先看 [微操作手册](./references/operation-manual.md) 里的“变体归并”规则，再决定要不要补词
-
-默认做法是：先用本文件完成“场景、Tier、档位、输出合同”的主判断，再按问题类型补读 `references/`；只有在单文件安装场景里，才停留在本文件的兜底规则。
