@@ -68,7 +68,7 @@ Scene
 
 ## 2. 创建项目（含 Vite ——）
 
-> ⚠️ **修正点**：原稿只写了 `npm install three`，但直接用 `<script type="module">` 引入裸模块名 `'three'` 在浏览器里是跑不起来的（会报 "Failed to resolve module specifier" 错误）。Node 项目需要一个打包/开发服务器帮你把 `three` 解析成真实路径 —— 这里用目前最主流、最轻量的 **Vite**。
+。
 
 ```bash
 mkdir three-demo && cd three-demo
@@ -173,7 +173,7 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 ```
 
-> 💡 加了 `antialias: true`（原稿没有），边缘锯齿会明显减少，观感提升很大，几乎零成本。
+> 💡 加了 `antialias: true`，边缘锯齿会明显减少，观感提升很大，几乎零成本。
 
 流程：
 
@@ -310,7 +310,7 @@ light.position.set(5, 5, 5);
 scene.add(light);
 ```
 
-> ⚠️ **修正点**：原稿光照强度写的是 `1`，配合 `MeshStandardMaterial` 默认参数在新版 Three.js（自 r155 起引擎调整了光照物理单位）下会偏暗，实际效果打折扣。这里给到 `2`，画面会明显亮一些；你也可以自己调这个数字，直到明暗对比舒服为止。
+>
 
 再补一盏微弱的环境光，让阴影面不至于全黑：
 
@@ -339,7 +339,7 @@ Real Lighting with Shading
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 ```
 
-> ⚠️ **修正点**：原稿的导入路径是 `three/examples/jsm/controls/OrbitControls.js`，这个路径依然能用，但新版 Three.js 官方文档统一推荐 `three/addons/...` 别名写法，两者指向同一份文件，用新写法更保险、也更贴合最新文档。
+>
 
 ```javascript
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -347,7 +347,7 @@ controls.enableDamping = true;   // 开启惯性阻尼，拖拽手感更顺滑�
 controls.dampingFactor = 0.05;
 ```
 
-> ⚠️ **修正点**：开启 `enableDamping` 之后，**必须**在动画循环里每帧调用一次 `controls.update()`，否则阻尼效果不会生效，控制器实际上是"失灵"的。这是新手最容易漏掉的一步：
+>
 
 ```javascript
 function animate() {
@@ -415,7 +415,7 @@ loader.load(
 );
 ```
 
-> 💡 补充：原稿只写了成功回调，漏了错误处理。3D 模型加载常见踩坑是路径不对、跨域或文件损坏，加上 `error` 回调能第一时间在控制台看到原因，而不是对着一片空白发呆。
+> 
 
 模型去哪找？[Sketchfab](https://sketchfab.com)（很多可免费下载/带 CC 协议）、[Poly Pizza](https://poly.pizza) 都有大量现成的 `.glb`，拖进项目 `public` 目录就能用。
 
