@@ -66,7 +66,7 @@ Scene
 
 ---
 
-## 2. 创建项目（含 Vite —— 原稿这一步是缺失的）
+## 2. 创建项目（含 Vite ——）
 
 > ⚠️ **修正点**：原稿只写了 `npm install three`，但直接用 `<script type="module">` 引入裸模块名 `'three'` 在浏览器里是跑不起来的（会报 "Failed to resolve module specifier" 错误）。Node 项目需要一个打包/开发服务器帮你把 `three` 解析成真实路径 —— 这里用目前最主流、最轻量的 **Vite**。
 
