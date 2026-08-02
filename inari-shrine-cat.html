@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8" />
+<title>稻荷大社 · 千本鳥居与野猫</title>
+<style>
+  :root {
+    --bg: #120a08;
+    --panel: rgba(20, 12, 10, 0.72);
+    --accent: #e8542f;
+    --accent-2: #f2b94a;
+    --text: #f5ece2;
+    --muted: #b99a86;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    overflow: hidden;
+  }
+  canvas { display: block; }
+
+  #hud {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    padding: 16px 20px;
+    background: var(--panel);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    max-width: 300px;
+    pointer-events: none;
+  }
+  #hud h1 {
+    font-size: 15px;
+    margin: 0 0 6px;
+    letter-spacing: 0.02em;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    font-weight: 700;
+  }
+  #hud p {
+    margin: 0;
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: var(--muted);
+  }
+  #hint {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 10px 18px;
+    background: var(--panel);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 999px;
+    font-size: 12.5px;
+    color: var(--muted);
+    display: flex;
+    gap: 14px;
+    white-space: nowrap;
+  }
+  #hint b { color: var(--text); font-weight: 600; }
+  #loading {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    color: var(--muted);
+    font-size: 13px;
+    z-index: 10;
+    transition: opacity 0.4s ease;
+  }
+</style>
+</head>
+<body>
+
+<div id="loading">正在搭建鳥居隧道…</div>
+
+<div id="hud">
+  <h1>⛩️ 稻荷大社 · 千本鳥居</h1>
+  <p>一只灰白小野猫正沿着鳥居隧道慢慢走过，拖动视角可以跟着它看。</p>
+</div>
+
+<div id="hint">
+  <span>🖱️ <b>左键拖动</b> 旋转</span>
+  <span>🔍 <b>滚轮</b> 缩放</span>
+  <span>🐈 <b>看猫</b> 走过隧道</span>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// ---------------------------------------------------------------
+// Scene / Camera / Renderer
+// ---------------------------------------------------------------
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x1a100c);
+scene.fog = new THREE.FogExp2(0x1a100c, 0.045);
+
+const camera = new THREE.PerspectiveCamera(
+  55, window.innerWidth / window.innerHeight, 0.1, 200
+);
+camera.position.set(6, 2.4, 9);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+document.body.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.06;
+controls.minDistance = 3;
+controls.maxDistance = 24;
+controls.maxPolarAngle = Math.PI * 0.49;
+controls.target.set(0, 1.4, 0);
+
+// ---------------------------------------------------------------
+// Lighting — warm dusk light filtering through the gates
+// ---------------------------------------------------------------
+const sun = new THREE.DirectionalLight(0xffcf9e, 2.4);
+sun.position.set(-6, 10, 4);
+sun.castShadow = true;
+sun.shadow.mapSize.set(1024, 1024);
+sun.shadow.camera.left = -15;
+sun.shadow.camera.right = 15;
+sun.shadow.camera.top = 15;
+sun.shadow.camera.bottom = -15;
+scene.add(sun);
+
+const ambient = new THREE.AmbientLight(0x442218, 1.1);
+scene.add(ambient);
+
+const rim = new THREE.PointLight(0xff6a3d, 4, 20);
+rim.position.set(0, 3, -8);
+scene.add(rim);
+
+// ---------------------------------------------------------------
+// Ground path (worn stone corridor)
+// ---------------------------------------------------------------
+const groundMat = new THREE.MeshStandardMaterial({ color: 0x5a5148, roughness: 1 });
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(14, 60), groundMat);
+ground.rotation.x = -Math.PI / 2;
+ground.position.z = -10;
+ground.receiveShadow = true;
+scene.add(ground);
+
+// side moss strips
+const mossMat = new THREE.MeshStandardMaterial({ color: 0x2e3a24, roughness: 1 });
+[-1, 1].forEach((side) => {
+  const strip = new THREE.Mesh(new THREE.PlaneGeometry(6, 60), mossMat);
+  strip.rotation.x = -Math.PI / 2;
+  strip.position.set(side * 5, 0.01, -10);
+  strip.receiveShadow = true;
+  scene.add(strip);
+});
+
+// ---------------------------------------------------------------
+// Torii gate factory
+// ---------------------------------------------------------------
+function makeTorii() {
+  const group = new THREE.Group();
+  const red = new THREE.MeshStandardMaterial({ color: 0xd8461f, roughness: 0.55, metalness: 0.05 });
+  const black = new THREE.MeshStandardMaterial({ color: 0x1a1512, roughness: 0.7 });
+
+  const pillarGeo = new THREE.CylinderGeometry(0.16, 0.19, 3.4, 12);
+  [-1.6, 1.6].forEach((x) => {
+    const pillar = new THREE.Mesh(pillarGeo, red);
+    pillar.position.set(x, 1.7, 0);
+    pillar.castShadow = true;
+    group.add(pillar);
+
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.24, 0.3, 12), black);
+    base.position.set(x, 0.15, 0);
+    base.castShadow = true;
+    group.add(base);
+  });
+
+  // nuki — lower crossbeam
+  const nuki = new THREE.Mesh(new THREE.BoxGeometry(3.7, 0.16, 0.18), red);
+  nuki.position.set(0, 2.6, 0);
+  nuki.castShadow = true;
+  group.add(nuki);
+
+  // shimaki + kasagi — top double beam, slightly wider with upturned ends feel
+  const shimaki = new THREE.Mesh(new THREE.BoxGeometry(4.3, 0.2, 0.34), black);
+  shimaki.position.set(0, 3.35, 0);
+  shimaki.castShadow = true;
+  group.add(shimaki);
+
+  const kasagi = new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.14, 0.42), red);
+  kasagi.position.set(0, 3.55, 0);
+  kasagi.castShadow = true;
+  group.add(kasagi);
+
+  // gakuzuka — small vertical tablet support under the top beam
+  const tablet = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.5, 0.06), black);
+  tablet.position.set(0, 3.0, 0.13);
+  group.add(tablet);
+
+  return group;
+}
+
+const GATE_COUNT = 14;
+const GATE_SPACING = 3.1;
+for (let i = 0; i < GATE_COUNT; i++) {
+  const gate = makeTorii();
+  gate.position.z = -i * GATE_SPACING;
+  scene.add(gate);
+}
+
+// ---------------------------------------------------------------
+// Small stone lanterns along the side (like the reference photo)
+// ---------------------------------------------------------------
+function makeLantern() {
+  const group = new THREE.Group();
+  const stone = new THREE.MeshStandardMaterial({ color: 0x6b7268, roughness: 1 });
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.32, 0.35, 8), stone);
+  base.position.y = 0.18;
+  const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.16, 0.7, 8), stone);
+  shaft.position.y = 0.7;
+  const box = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.4, 0.5), stone);
+  box.position.y = 1.25;
+  const roof = new THREE.Mesh(new THREE.ConeGeometry(0.42, 0.35, 4), stone);
+  roof.position.y = 1.6;
+  roof.rotation.y = Math.PI / 4;
+  [base, shaft, box, roof].forEach((m) => { m.castShadow = true; group.add(m); });
+  return group;
+}
+
+for (let i = 0; i < 5; i++) {
+  const l1 = makeLantern();
+  l1.position.set(-4.4, 0, -i * 9 - 3);
+  scene.add(l1);
+  const l2 = makeLantern();
+  l2.position.set(4.4, 0, -i * 9 - 6);
+  scene.add(l2);
+}
+
+// ---------------------------------------------------------------
+// Low-poly stray cat 🐈 — grey tabby, walking through the tunnel
+// ---------------------------------------------------------------
+function makeCat() {
+  const cat = new THREE.Group();
+  const fur = new THREE.MeshStandardMaterial({ color: 0x9aa0a6, roughness: 0.85 });
+  const furDark = new THREE.MeshStandardMaterial({ color: 0x5c6167, roughness: 0.85 });
+  const pink = new THREE.MeshStandardMaterial({ color: 0xd98c93, roughness: 0.6 });
+
+  const body = new THREE.Mesh(new THREE.SphereGeometry(0.22, 12, 10), fur);
+  body.scale.set(1.5, 0.95, 1);
+  body.position.set(0, 0.32, 0);
+  body.castShadow = true;
+  cat.add(body);
+
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.15, 12, 10), fur);
+  head.position.set(0.32, 0.42, 0);
+  head.castShadow = true;
+  cat.add(head);
+
+  const earGeo = new THREE.ConeGeometry(0.055, 0.11, 4);
+  [-1, 1].forEach((s) => {
+    const ear = new THREE.Mesh(earGeo, furDark);
+    ear.position.set(0.36, 0.53, s * 0.07);
+    ear.rotation.x = s * 0.3;
+    cat.add(ear);
+  });
+
+  const nose = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 8), pink);
+  nose.position.set(0.46, 0.4, 0);
+  cat.add(nose);
+
+  // legs
+  const legGeo = new THREE.CylinderGeometry(0.035, 0.03, 0.28, 6);
+  const legPositions = [
+    [0.18, 0.14, 0.09], [0.18, 0.14, -0.09],
+    [-0.18, 0.14, 0.09], [-0.18, 0.14, -0.09],
+  ];
+  const legs = legPositions.map((p) => {
+    const leg = new THREE.Mesh(legGeo, furDark);
+    leg.position.set(...p);
+    leg.castShadow = true;
+    cat.add(leg);
+    return leg;
+  });
+
+  // tail — a few segments curling upward
+  const tailGroup = new THREE.Group();
+  const segCount = 5;
+  let prev = tailGroup;
+  for (let i = 0; i < segCount; i++) {
+    const seg = new THREE.Mesh(new THREE.CylinderGeometry(0.028 - i * 0.003, 0.032 - i * 0.003, 0.14, 6), fur);
+    seg.position.y = i === 0 ? 0 : 0.13;
+    seg.rotation.z = -0.35;
+    seg.castShadow = true;
+    prev.add(seg);
+    prev = seg;
+  }
+  tailGroup.position.set(-0.24, 0.38, 0);
+  tailGroup.rotation.z = 0.9;
+  cat.add(tailGroup);
+
+  cat.userData.legs = legs;
+  cat.scale.set(1.4, 1.4, 1.4);
+  return cat;
+}
+
+const cat = makeCat();
+scene.add(cat);
+
+// ---------------------------------------------------------------
+// Resize
+// ---------------------------------------------------------------
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// ---------------------------------------------------------------
+// Animate — cat walks the length of the tunnel, then loops
+// ---------------------------------------------------------------
+const PATH_START = 8;
+const PATH_END = -(GATE_COUNT - 1) * GATE_SPACING - 4;
+const WALK_SPEED = 1.1;
+let walkT = 0;
+const clock = new THREE.Clock();
+
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = clock.getDelta();
+  const elapsed = clock.getElapsedTime();
+
+  walkT += dt * WALK_SPEED;
+  const totalDist = PATH_START - PATH_END;
+  const progress = (walkT % (totalDist / WALK_SPEED)) * WALK_SPEED;
+  const z = PATH_START - progress;
+  cat.position.z = z;
+  cat.position.x = Math.sin(elapsed * 1.4) * 0.25; // gentle side-to-side wander
+  cat.position.y = Math.abs(Math.sin(elapsed * 7)) * 0.03; // subtle bob
+  cat.rotation.y = Math.PI / 2 + Math.sin(elapsed * 1.4) * 0.15;
+
+  cat.userData.legs.forEach((leg, i) => {
+    leg.rotation.x = Math.sin(elapsed * 9 + i * Math.PI / 2) * 0.35;
+  });
+
+  controls.update();
+  renderer.render(scene, camera);
+}
+
+const loadingEl = document.getElementById('loading');
+loadingEl.style.opacity = '0';
+setTimeout(() => loadingEl.remove(), 400);
+
+animate();
+</script>
+</body>
+</html>
